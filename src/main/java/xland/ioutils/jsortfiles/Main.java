@@ -130,7 +130,7 @@ public class Main implements Runnable {
         this.timeFormatter = timeFormatter;
     }
 
-    public static void main(String[] rawArgs) {
+    public static void main(String[] rawArgs) throws IOException {
         final List<Arg> args = Arg.parse(rawArgs, MAP);
         final Iterator<Arg> itr = args.iterator();
 
@@ -187,7 +187,11 @@ public class Main implements Runnable {
         if (timeFormatter == null) timeFormatter = defaultTimeFormatter();
 
         Runnable r = new Main(source ,target, removeAfterSorting, recursive, zoneId.get(), timeFormatter);
-        r.run();
+        try {
+            r.run();
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
     }
 
     public static String help() {
