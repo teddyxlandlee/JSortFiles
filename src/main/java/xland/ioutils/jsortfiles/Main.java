@@ -1,3 +1,20 @@
+/*
+ * This file is part of jsortfiles.
+ * Copyright (C) 2022 teddyxlandlee
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
 package xland.ioutils.jsortfiles;
 
 import java.io.IOException;
@@ -115,8 +132,14 @@ public class Main implements Runnable {
     }
 
     public static void main(String[] rawArgs) {
+        if (rawArgs.length == 0) {
+            System.err.println(help());
+            System.exit(0);
+            throw new IncompatibleClassChangeError();
+        }
+
         final List<Arg> args = Arg.parse(rawArgs, MAP);
-        final Iterator<Arg> itr = args.listIterator();
+        final Iterator<Arg> itr = args.iterator();
 
         // Extra options are ignored
         Path source = null;
