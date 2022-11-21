@@ -62,6 +62,7 @@ public class Main implements Runnable {
             putM(m, timeId, file);
         }
         m.forEach((String timeId, Set<Path> ps) -> {
+            Path target = this.target.resolve(timeId);
             Map<Path, Path> s2t = new HashMap<>();
             Set<String> occupiedFilenames = new HashSet<>();
             // Check filename
@@ -90,13 +91,11 @@ public class Main implements Runnable {
                     } while (true);
                 }
             }
-            occupiedFilenames.forEach(s -> {
-                try {
-                    Files.createDirectory(target.resolve(s));
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
+            try {
+                Files.createDirectory(target);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
             s2t.forEach((p1, p2) -> {
                 try {
                     if (removeAfterSorting) {
