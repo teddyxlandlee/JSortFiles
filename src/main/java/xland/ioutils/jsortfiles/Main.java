@@ -132,12 +132,6 @@ public class Main implements Runnable {
     }
 
     public static void main(String[] rawArgs) {
-        if (rawArgs.length == 0) {
-            System.err.println(help());
-            System.exit(0);
-            throw new IncompatibleClassChangeError();
-        }
-
         final List<Arg> args = Arg.parse(rawArgs, MAP);
         final Iterator<Arg> itr = args.iterator();
 
