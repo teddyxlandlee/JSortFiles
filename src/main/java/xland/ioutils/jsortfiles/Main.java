@@ -31,6 +31,7 @@ import java.time.temporal.ChronoField;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,6 +40,7 @@ public class Main implements Runnable {
     private final boolean removeAfterSorting, recursive;
     private final ZoneId zoneId;
     private final DateTimeFormatter timeFormatter;
+    private final Pattern exclusions;
 
     public static DateTimeFormatter defaultTimeFormatter() {
         return new DateTimeFormatterBuilder()
@@ -53,7 +55,7 @@ public class Main implements Runnable {
     protected void run0() throws IOException {
         Set<Path> files;
         try (Stream<Path> paths = recursive ? Files.walk(source) : Files.list(source)) {
-            files = paths.collect(Collectors.toSet());
+            files = paths.filter(exclusions == null ? Objects::nonNull : p -> !exclusions.matcher(p.getFileName().toString()).matches()).collect(Collectors.toSet());
         }
         Map<String, Set<Path>> m = new HashMap<>();
         for (Path file : files) {
@@ -117,7 +119,7 @@ public class Main implements Runnable {
         vs.add(v);
     }
 
-    public Main(Path source, Path target, boolean removeAfterSorting, boolean recursive, ZoneId zoneId, DateTimeFormatter timeFormatter) {
+    public Main(Path source, Path target, boolean removeAfterSorting, boolean recursive, ZoneId zoneId, DateTimeFormatter timeFormatter, String exclusions) {
         Objects.requireNonNull(source, "source");
         Objects.requireNonNull(target, "target");
         Objects.requireNonNull(zoneId, "zoneId");
@@ -128,6 +130,7 @@ public class Main implements Runnable {
         this.recursive = recursive;
         this.zoneId = zoneId;
         this.timeFormatter = timeFormatter;
+        this.exclusions = exclusions == null ? null : Pattern.compile(exclusions);
     }
 
     public static void main(String[] rawArgs) throws IOException {
@@ -139,6 +142,7 @@ public class Main implements Runnable {
         Path target = null;
         Supplier<ZoneId> zoneId = ZoneId::systemDefault;
         DateTimeFormatter timeFormatter = null;
+        String exclusions = null;
 
         boolean removeAfterSorting = false;
         boolean recursive = false;
@@ -180,13 +184,17 @@ public class Main implements Runnable {
                     zoneId = () -> ZoneId.of(tz);
                 }
                     break;
+                case "exclude":
+                    arg = itr.next();
+                    exclusions = arg.getContext();
+                    break;
             }
         }
         if (source == null) source = Paths.get("");
         if (target == null) target = source;
         if (timeFormatter == null) timeFormatter = defaultTimeFormatter();
 
-        Runnable r = new Main(source ,target, removeAfterSorting, recursive, zoneId.get(), timeFormatter);
+        Runnable r = new Main(source, target, removeAfterSorting, recursive, zoneId.get(), timeFormatter, exclusions);
         try {
             r.run();
         } catch (UncheckedIOException e) {
@@ -204,6 +212,7 @@ public class Main implements Runnable {
                 "\t-r, --recursive: to iterate the source directory recursively\n" +
                 "\t-t, --target [directory]: target directory into which sorted files are moved, defaulting to source\n" +
                 "\t-v, --version: print software version and copyright information\n" +
+                "\t-x, --exclude [pattern]: exclude specific filenames, using regex\n" +
                 "\t-z, --timezone [tz]: set the time zone ID used to identify file modification time, defaulting to system zone\n";
     }
 
@@ -237,6 +246,7 @@ public class Main implements Runnable {
         m.put('r', "recursive");
         m.put('t', "target");
         m.put('v', "version");
+        m.put('x', "exclude");
         m.put('z', "timezone");
         MAP = m::get;
     }
